@@ -1,5 +1,4 @@
 
-
 module calfft
 #(
 parameter data_width =24,
@@ -49,7 +48,10 @@ wire [23:0]ans1;
 reg [15:0]data;
 reg sign;
 
-
+//always@(*)begin
+//sumReal=sumReal+squardReal;
+//sumImag=sumImag+squardImag;
+//end 
 
 reg [data_width-1:0] samples [freq_bins-1:0];   
 
@@ -149,12 +151,54 @@ reg [data_width-1:0] x;
                 end
                 end
                 
+////           STATE_READ: begin
+////                for( i=0 ; i<freq_bins ;i=i+1)begin
+////                bin_out_real[i] <= frequency_bins_real[i];
+////                bin_out_imag[i] <= frequency_bins_imag[i];
+////                end
+////                state <= STATE_WAIT;
+////                end
+//           STATE_CAL_THD:begin
+//             sum<=sumReal+sumImag;
+//             firstReal<=frequency_bins_real[0];
+//             firstImag<=frequency_bins_imag[0];
+//             state<=STATE_WAIT;
+//           end
            STATE_START: begin
+             //   START<=1;
                 cycles <= cycles + 1; // keep track of how many cycles
                 start_calVoltage<=1'b0;
-                delta<=diff;
-                samples[sample_index] <= sample;
-                state <= STATE_MID; 
+//                sample_num<=sample_num+1;
+//                if(sample_num==100)
+//                sample_num<=0;
+                // get delta: newest - oldest
+                //delta <= sample - samples[sample_index];
+               // x<=samples[sample_index];
+              delta<=diff;
+//                if(x[23]==0)
+//                  x[23]<=1'b1;
+//                else 
+//                  x[23]<=1'b0;
+//                 x[22]<=1'b1;
+            //    if(sample[23]==x[23])begin
+//                 delta<={x[23],sample[22:0]};//+x[22:0]};
+//                // state <= STATE_CALC;
+               //  end
+//                else if(sample[22:0]>x[22:0])begin
+//                 delta<={sample[23],sample[22:0]-x[22:0]};
+//                // state <= STATE_CALC;
+//                 end
+//                else begin
+//                 delta<={x[23],x[22:0]-sample[22:0]};
+//                // state <= STATE_CALC;
+//                 end
+//                // store new sample
+               samples[sample_index] <= sample;
+//                tw_addr <= 0;
+            
+             
+             state <= STATE_MID;
+             
             end
             
             STATE_MID:begin
@@ -187,7 +231,11 @@ reg [data_width-1:0] x;
               state <= WAIT_CLK2;
               end
               if(done2==1'b1)
-              frequency_bins_imag[tw_addr]<=out2;         
+              frequency_bins_imag[tw_addr]<=out2;
+              //start_CAL2_0<=1'b1;
+             // start_power_0<=1'b1;
+            //  state <=STATE_LOAD_ROM ;
+              
            end
            
             WAIT_CLK2:begin
@@ -222,7 +270,9 @@ reg [data_width-1:0] x;
                 if(sample_index == freq_bins)
                     sample_index <= 0;
                  state <=STATE_WAIT;
-            end          
+            end 
+//        endcase
+//      end            
   endcase
  end
 
