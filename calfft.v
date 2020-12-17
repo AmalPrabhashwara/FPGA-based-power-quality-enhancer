@@ -262,7 +262,6 @@ reg [data_width-1:0] x;
            end
            
 
-
             STATE_FINISH: begin
                 // increment sample index (same as rotating)
                 sample_index <= sample_index + 1;
