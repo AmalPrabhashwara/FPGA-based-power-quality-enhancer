@@ -1,6 +1,29 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 12/07/2019 10:16:17 PM
+// Design Name: 
+// Module Name: top
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+
 module top(
 input clk,input vauxn6,vauxp6,vauxn7,vauxp7,input [2:0] sw,input transmit,output TxD,
-output[3:0]an,output [6:0] seg
+output[3:0]an,output [6:0] seg, output hsync, output vsync,output[3:0]red, output[3:0] green, output[3:0] blue
 );
 
     localparam freq_bins=128;
@@ -50,8 +73,15 @@ output[3:0]an,output [6:0] seg
     reg [30:0]i,x;
     
     reg [15:0]adc_Bata[511:0];
-    
-    
+    wire devided_clk;
+    wire [9:0]hcs,vcs;
+    wire activevideo;
+    reg [23:0]DipVgaBin;
+    reg [8:0]bar[127:0];
+    reg [15:0]k=16'h8889;
+    reg [8:0]height;
+    reg [28:0]counter2;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    reg [8:0]j;////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     localparam S1=1;
     localparam S2=2;
@@ -60,16 +90,14 @@ output[3:0]an,output [6:0] seg
     localparam S5=5;
     localparam S6=6;
     
-    assign daddr_in=(sw[0]==0)? 7'h16:7'h17;
     
-    always @(posedge clk)begin
-    VT_bin[index]<=bin;
-    CT_bin[index_CT]<=bin_CT;
-    end
     
+     
      
     initial begin
     counter=0;
+    counter2=0;/////////////////////////////////////////////////////////////////////////////////////////////////
+    j=0;/////////////////////////////////////////////////////////////////////////////////////////////////////////////
     start=0;
     start_CT=0;
     state=S1;
@@ -80,6 +108,7 @@ output[3:0]an,output [6:0] seg
     $readmemb("example6.mem",adc_Bata );
     $readmemb("one28.mem",one28val ); 
     end
+
 
 
 xadc_wiz_0 your_instance_name (
@@ -103,10 +132,31 @@ xadc_wiz_0 your_instance_name (
   .busy_out(isbusy)        // output wire busy_out
 );
 
+
+    assign daddr_in=(sw[0]==0)? 7'h16:7'h17;
     
+    always @(posedge clk)begin
+    VT_bin[index]<=bin;
+    CT_bin[index_CT]<=bin_CT;
+    end
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+    always @(posedge clk)begin
+    if(counter2==1000000)begin
+     for(j=0; j<128;j=j+1)begin
+       VT_bin[j]<=0;
+       CT_bin[j]<=0;
+      end
+      counter2<=0;
+    end
+    else begin
+    counter2<=counter2+1;
+    j<=0;
+    end
+    end
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////   
     always@(posedge clk)begin
                               //     512    128    1280          1024
-    if(counter==97656)begin  //65120 195313 781250 78125 3080     97656
+    if(counter==78125)begin   //65120 195313 781250 78125 3080     97656
     counter<=0;
     if(sw[0]==0)begin
     start<=1;
@@ -198,8 +248,29 @@ Do_transmition d1(clk,start_transmit,transmit,hex_val,TxD,done_transmit);
  endcase
  end
  
+ always @(hcs)begin
+ 
+   if(vcs<=29 &&  hcs>=143 && hcs<=782)begin
+     DipVgaBin<=VT_bin[(hcs-143)/8];  //8---15
+     bar[(hcs-143)/8]<=DipVgaBin/k;
+   end
+   else if(vcs<=510 && hcs>=143 && hcs<=782)begin
+    height<=bar[(hcs-143)/8];
+   end
+   else if(vcs<=520 && hcs>=143 && hcs<=782)begin
+    bar[(hcs-143)/8]<=0;
+    height<=0;
+   end
+   else begin
+   height<=0;
+   bar[(hcs-143)/8]<=0;
+   end
+   
+ end
     
  bin2seg b2(clk,display_val,seg,an);
+ clk_devider cd1(clk,devided_clk);
+ vga v1(devided_clk,hsync,vsync,hcs,vcs,activevideo);
+ rgb rg1(vcs,hcs,activevideo,height,red,green,blue);
  
-
 endmodule
